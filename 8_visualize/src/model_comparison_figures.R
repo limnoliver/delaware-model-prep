@@ -29,7 +29,8 @@ training_obs <- feather::read_feather('3_predictions/out/compare_predictions_obs
   group_by(seg_id_nat) %>%
   summarize(n_training_obs = n())
 
-diff <- left_join(mutate(diff, seg_id_nat = as.character(seg_id_nat)), training_obs)
+diff <- left_join(mutate(diff, seg_id_nat = as.character(seg_id_nat)), training_obs) %>%
+  mutate(diff_prop = metric_diff/sntemp_metric_value)
 
 p_rmse <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = sntemp_metric_value, y = rgcn_metric_value)) +
   geom_point(aes(size = n_training_obs), alpha = 0.3) +
@@ -53,6 +54,32 @@ p_diff <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = n_training_obs, y = m
 
 ggsave('8_visualize/out/rmse_improvement_vs_ntraining.png', p_diff, height = 3, width = 4)
 
+# relative difference vs training obs
+p_diff <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = n_training_obs, y = diff_prop)) +
+  geom_point(alpha = 0.5, aes(size = n)) +
+  scale_size_continuous(breaks = c(10, 100, 1000)) +
+
+  geom_smooth(method = 'lm', se = FALSE, alpha = 0.5) +
+  scale_x_log10() +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(y = 'rRMSE Improvement\n(UPB - PGDL/UPB)', x = 'Number of training obs.')
+
+ggsave('8_visualize/out/rmse_prop_improvement_vs_ntraining.png', p_diff, height = 3, width = 5)
+
+p_diff_test <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = n_training_obs, y = metric_diff)) +
+  geom_point(alpha = 0.5, aes(size = n)) +
+  scale_size_continuous(breaks = c(10, 100, 1000)) +
+  geom_smooth(method = 'lm', se = FALSE, alpha = 0.5) +
+  scale_x_log10() +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(y = 'RMSE Improvement (UPB - PGDL)', x = 'Number of training obs.', size = 'Number of\ntest obs.')
+
+ggsave('8_visualize/out/rmse_improvement_vs_ntraining_ntest.png', p_diff_test, height = 3, width = 5)
+
+
+
 p_diff2 <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = sntemp_metric_value, y = metric_diff)) +
   geom_point(alpha = 0.3, aes(size = n_training_obs)) +
   geom_smooth(method = 'lm', se = FALSE, alpha = 0.5) +
@@ -71,9 +98,9 @@ metrics <- group_by(metrics, model, metric) %>%
 
 p_density <- ggplot(filter(metrics, metric %in% 'rmse'), aes(x = metric_value)) +
   geom_density(aes(fill = model, group = model), color = NA, alpha = 0.7) +
-  scale_fill_manual(values = c('#7570b3', '#1b9e77'), labels = c('UPB', 'PGDL')) +
+  scale_fill_manual(values = c('#1b9e77', '#7570b3'), labels = c('UPB', 'PGDL')) +
   geom_vline(aes(xintercept = median_val, color = model), size = 1.5, linetype = 2) +
-  scale_color_manual(values = c('#7570b3', '#1b9e77'), labels = c('UPB', 'PGDL'), guide = FALSE) +
+  scale_color_manual(values = c('#1b9e77', '#7570b3'), labels = c('UPB', 'PGDL'), guide = FALSE) +
   coord_cartesian(ylim = c(0, 0.65), expand = FALSE) +
   theme(strip.background = element_blank(), strip.text = element_text(size = 14)) +
   theme_bw() +
@@ -81,7 +108,8 @@ p_density <- ggplot(filter(metrics, metric %in% 'rmse'), aes(x = metric_value)) 
   theme(panel.grid = element_blank(),
         strip.text = element_blank(),
         axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12)) +
+        axis.text = element_text(size = 12),
+        legend.position = c(.8, .8)) +
   labs(x = 'RMSE', y = 'Density', fill = 'Model')
 
 ggsave('8_visualize/out/rmse_density.png', p_density, height = 4, width = 6)
