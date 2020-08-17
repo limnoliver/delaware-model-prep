@@ -76,6 +76,27 @@ p_diff_test <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = n_training_obs, 
   theme(panel.grid = element_blank()) +
   labs(y = 'RMSE Improvement (UPB - PGDL)', x = 'Number of training obs.', size = 'Number of\ntest obs.')
 
+p_diff_test <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = n_training_obs, y = metric_diff)) +
+  geom_point(alpha = 0.5, aes(color = n)) +
+  scale_color_gradient(low = '#9ecae1', high = '#08306b') +
+  geom_smooth(method = 'lm', se = FALSE, color = 'gray20') +
+  geom_hline(yintercept = 0, linetype = 2) +
+  scale_x_log10() +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(y = 'RMSE Improvement (UPB - PGDL)', x = 'Number of training obs.', color = 'Number of\ntest obs.')
+
+p_diff_test <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = n_training_obs, y = metric_diff)) +
+  geom_point(alpha = 0.5, aes(size = n, color = metric_diff < 0)) +
+  scale_size_continuous(breaks = c(10, 100, 1000)) +
+  scale_color_manual(values = c('black', 'red'), guide = FALSE) +
+  geom_smooth(method = 'lm', se = FALSE, alpha = 0.5, color = 'black') +
+  geom_hline(yintercept = 0, linetype = 2) +
+  scale_x_log10() +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(y = 'RMSE Improvement (UPB - PGDL)', x = 'Number of training obs.', size = 'Number of\ntest obs.')
+
 ggsave('8_visualize/out/rmse_improvement_vs_ntraining_ntest.png', p_diff_test, height = 3, width = 5)
 
 
@@ -98,9 +119,9 @@ metrics <- group_by(metrics, model, metric) %>%
 
 p_density <- ggplot(filter(metrics, metric %in% 'rmse'), aes(x = metric_value)) +
   geom_density(aes(fill = model, group = model), color = NA, alpha = 0.7) +
-  scale_fill_manual(values = c('#1b9e77', '#7570b3'), labels = c('UPB', 'PGDL')) +
+  scale_fill_manual(values = c('#7570b3','#1b9e77'), labels = c('PGDL', 'UPB')) +
   geom_vline(aes(xintercept = median_val, color = model), size = 1.5, linetype = 2) +
-  scale_color_manual(values = c('#1b9e77', '#7570b3'), labels = c('UPB', 'PGDL'), guide = FALSE) +
+  scale_color_manual(values = c('#7570b3','#1b9e77'), labels = c('PGDL', 'UPB'), guide = FALSE) +
   coord_cartesian(ylim = c(0, 0.65), expand = FALSE) +
   theme(strip.background = element_blank(), strip.text = element_text(size = 14)) +
   theme_bw() +
