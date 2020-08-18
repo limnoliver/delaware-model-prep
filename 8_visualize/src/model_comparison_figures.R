@@ -30,7 +30,9 @@ training_obs <- feather::read_feather('3_predictions/out/compare_predictions_obs
   summarize(n_training_obs = n())
 
 diff <- left_join(mutate(diff, seg_id_nat = as.character(seg_id_nat)), training_obs) %>%
-  mutate(diff_prop = metric_diff/sntemp_metric_value)
+  mutate(diff_prop = metric_diff/sntemp_metric_value) %>%
+  mutate(n_training_obs = ifelse(is.na(n_training_obs), 0, n_training_obs))
+
 
 p_rmse <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = sntemp_metric_value, y = rgcn_metric_value)) +
   geom_point(aes(size = n_training_obs), alpha = 0.3) +
@@ -58,7 +60,6 @@ ggsave('8_visualize/out/rmse_improvement_vs_ntraining.png', p_diff, height = 3, 
 p_diff <- ggplot(filter(diff, metric %in% 'rmse'), aes(x = n_training_obs, y = diff_prop)) +
   geom_point(alpha = 0.5, aes(size = n)) +
   scale_size_continuous(breaks = c(10, 100, 1000)) +
-
   geom_smooth(method = 'lm', se = FALSE, alpha = 0.5) +
   scale_x_log10() +
   theme_bw() +
